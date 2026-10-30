@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Name · Daily journal</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='journal.js') }}" defer></script>
+  </head>
+  <body>
+    <div class="shell">
+      <aside>
+        <a class="brand" href="/">Name <span>✳</span></a>
+        <p class="muted">A little space for yourself.</p>
+        <a class="today" href="{{ url_for('home', day=today) }}">＋ Write today</a>
+
+        <h2>Your pages <span>{{ count }}</span></h2>
+        <form class="search">
+          <label class="sr-only" for="search">Search entries</label>
+          <input id="search" name="q" value="{{ query }}" placeholder="Search your journal…">
+          <button>Search</button>
+        </form>
+
+        <nav aria-label="Journal entries">
+          {% for item in entries %}
+            <a
+              class="entry {{ 'active' if item.day == day else '' }}"
+              href="{{ url_for('home', day=item.day, q=query) }}"
+            >
+              <small>{{ item.day }} · {{ item.mood }}</small>
+              <strong>{{ item.title }}</strong>
+              <p>{{ item.body[:90] }}</p>
+            </a>
+          {% else %}
+            <p class="empty">
+              {{ 'No matching pages. Try another search.' if query else 'Your story starts here. Write your first page today.' }}
+            </p>
+          {% endfor %}
+        </nav>
+
+        <p class="local">Saved on this computer.<br>A quiet place to come back to.</p>
+      </aside>
+
+      <main>
+        <header>
+          <span>THE DAILY PRACTICE</span>
+          <span>{{ selected.strftime('%A, %B %d, %Y') }}</span>
+        </header>
+
+        <section class="intro">
+          <p class="eyebrow">PAUSE. REFLECT. BEGIN AGAIN.</p>
+          <h1>Make room for your day.</h1>
+          <p class="muted">The big moments, the little things, and everything in between.</p>
+        </section>
+
+        <form id="journal" method="post" action="{{ url_for('save') }}">
+          <input type="hidden" name="csrf" value="{{ session.csrf }}">
+
+          <div class="page-top">
+            <div>
+              <label for="day">A page for </label>
+              <input id="day" type="date" name="day" value="{{ day }}" required>
+            </div>
+            <span id="status" role="status">
+              {{ 'Entry saved.' if request.args.get('saved') == '1' else 'Take your time.' }}
+            </span>
+          </div>
+
+          <label class="sr-only" for="title">Entry title</label>
+          <input
+            id="title"
+            name="title"
+            maxlength="160"
+            placeholder="Give today a title…"
+            value="{{ entry.title if entry else '' }}"
+          >
+
+          <fieldset>
+            <legend>How are you feeling?</legend>
+            <div class="moods">
+              {% for mood in moods %}
+                <label>
+                  <input
+                    type="radio"
+                    name="mood"
+                    value="{{ mood }}"
+                    {{ 'checked' if entry and entry.mood == mood else '' }}
+                  >
+                  <span>{{ mood }}</span>
+                </label>
+              {% endfor %}
+            </div>
+          </fieldset>
+
+          <label class="sr-only" for="body">Your journal entry</label>
+          <textarea
+            id="body"
+            name="body"
+            required
+            maxlength="100000"
+            placeholder="What’s on your mind?&#10;&#10;Start with something you’re grateful for, a moment worth remembering, or how today really felt."
+          >{{ entry.body if entry else '' }}</textarea>
+
+          <footer>
+            <span id="word-count">0 words</span>
+            <button class="save">Save this page ↗</button>
+          </footer>
+        </form>
+
+        {% if entry %}
+          <form class="delete-form" method="post" action="{{ url_for('delete') }}">
+            <input type="hidden" name="csrf" value="{{ session.csrf }}">
+            <input type="hidden" name="day" value="{{ day }}">
+            <button>Delete this entry</button>
+          </form>
+        {% endif %}
+
+        <p class="closing">You don’t have to have it all figured out to write it down.</p>
+      </main>
+    </div>
+  </body>
+</html>
